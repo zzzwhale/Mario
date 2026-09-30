@@ -1,80 +1,43 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using TMPro;
 
 public class JumpOverGoomba : MonoBehaviour
 {
-    public Transform enemyLocation;
-    public TextMeshProUGUI scoreTextInGame;
-    private bool onGroundState;
+    GameManager gameManager;
+    private bool isStomped = false;
 
-    [System.NonSerialized]
-    public int score = 0; // we don't want this to show up in the inspector
-
-    private bool countScoreState = false;
-    public Vector3 boxSize;
-    public float maxDistance;
-    public LayerMask layerMask;
-    // Start is called before the first frame update
     void Start()
     {
-
+        gameManager = GameObject.FindGameObjectWithTag("Manager").GetComponent<GameManager>();
     }
 
-    // Update is called once per frame
-    void Update()
+    void OnTriggerEnter2D(Collider2D other)
     {
-
-
-    }
-
-    // helper
-    void OnDrawGizmos()
-    {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawCube(transform.position - transform.up * maxDistance, boxSize);
-    }
-
-    void FixedUpdate()
-    {
-        // mario jumps
-        if (Input.GetKeyDown("space") && onGroundCheck())
+        if (other.CompareTag("Player") && !isStomped)
         {
-            onGroundState = false;
-            countScoreState = true;
-        }
+            isStomped = true;
 
-        // when jumping, and Goomba is near Mario and we haven't registered our score
-        if (!onGroundState && countScoreState)
-        {
-            if (Mathf.Abs(transform.position.x - enemyLocation.position.x) < 0.5f)
+            // 1. Trigger score and game manager events
+            if (gameManager != null)
             {
-                countScoreState = false;
-                score++;
-                scoreTextInGame.text = "Score: " + score.ToString();
-                Debug.Log(score);
+                gameManager.TriggerEnemyStomp();
+
+                // Play the stomp sound via the AudioEventTrigger component on GameManager
+                AudioEventTrigger audioTrigger = gameManager.GetComponent<AudioEventTrigger>();
+                if (audioTrigger != null)
+                {
+                    audioTrigger.PlaySound();
+                }
             }
-        }
-    }
 
-    void OnCollisionEnter2D(Collision2D col)
-    {
-        if (col.gameObject.CompareTag("Ground")) onGroundState = true;
-    }
+            // 2. Bounce Mario upward
+            Rigidbody2D marioBody = other.GetComponent<Rigidbody2D>();
+            if (marioBody != null)
+            {
+                marioBody.linearVelocity = new Vector2(marioBody.linearVelocity.x, 8f);
+            }
 
-
-    private bool onGroundCheck()
-    {
-        if (Physics2D.BoxCast(transform.position, boxSize, 0, -transform.up, maxDistance, layerMask))
-        {
-            Debug.Log("on ground");
-            return true;
-        }
-        else
-        {
-            Debug.Log("not on ground");
-            return false;
+            // 3. Destroy the Goomba
+            Destroy(transform.parent.gameObject);
         }
     }
 }
