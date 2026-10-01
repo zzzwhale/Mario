@@ -4688,6 +4688,7 @@ MonoBehaviour:
   upSpeed: 30
   maxSpeed: 5
   enemies: {fileID: 1597577269}
+  marioAnimator: {fileID: 1731130097}
   gameCamera: {fileID: 519420032}
   gameManager: {fileID: 1421562588}
 --- !u!61 &1731130093

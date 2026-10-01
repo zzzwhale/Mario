@@ -23,7 +23,7 @@ public class PlayerMovement : MonoBehaviour
     private bool moving = false;
 
     // Added from week 2 lab
-    private Animator marioAnimator;
+    public Animator marioAnimator;
     private bool alive = true;        // Set to true so Mario can move and jump by default
     private bool jumpedState = false; // Tracks if the initial jump happened for a jumphold
 
@@ -35,7 +35,16 @@ public class PlayerMovement : MonoBehaviour
     // Check if Mario is on the ground
     void OnCollisionEnter2D(Collision2D col)
     {
-        if (col.gameObject.CompareTag("Ground")) onGroundState = true;
+        if (col.gameObject.CompareTag("Ground"))
+        {
+            onGroundState = true;
+
+            // ---> THIS IS THE PART THAT WAS ADDED/EDITED:
+            if (marioAnimator != null)
+            {
+                marioAnimator.SetBool("onGround", onGroundState);
+            }
+        }
     }
 
     // Start is called before the first frame update
@@ -45,8 +54,11 @@ public class PlayerMovement : MonoBehaviour
         Application.targetFrameRate = 60;
         marioBody = GetComponent<Rigidbody2D>();
         marioSprite = GetComponent<SpriteRenderer>();
-
         marioAnimator = GetComponent<Animator>();
+
+        // FORCE MARIO TO START IDLE
+        marioAnimator.SetBool("isRunning", false);
+        marioAnimator.SetBool("isAlive", true);
 
     }
 
@@ -87,9 +99,12 @@ public class PlayerMovement : MonoBehaviour
             // We only want to trigger Game Over if Mario hits the enemy sideways or from below!
             Debug.Log("Collided with enemy trigger!");
 
-            Time.timeScale = 0.0f;
+            
+            // mario dies
+            marioAnimator.SetBool("isAlive", false);
             // Call Game Over function
             GameObject.FindGameObjectWithTag("Manager").GetComponent<GameManager>().GameOver();
+
         }
     }
     // FixedUpdate may be called once per frame. See documentation for details.
@@ -99,6 +114,8 @@ public class PlayerMovement : MonoBehaviour
         {
             Move(faceRightState == true ? 1 : -1);
         }
+
+      
 
     }
     
@@ -113,16 +130,20 @@ public class PlayerMovement : MonoBehaviour
     }
 
     public void MoveCheck(int value)
-    {
+    {   
+        // if mario is not moving
         if (value == 0)
         {
             moving = false;
-        }
+            marioAnimator.SetBool("isRunning", false);
+        }   
         else
         {
             FlipMarioSprite(value);
             moving = true;
             Move(value);
+            marioAnimator.SetBool("isRunning", true); // Set the "isRunning" parameter to true when moving
+
         }
     }
 
@@ -174,6 +195,8 @@ public class PlayerMovement : MonoBehaviour
         // reset sprite direction
         faceRightState = true;
         marioSprite.flipX = false;
+
+        marioAnimator.SetBool("isAlive", true);
 
         // reset animation
         marioAnimator.SetTrigger("gameRestart");
