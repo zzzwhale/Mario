@@ -23,4 +23,11 @@ public class EnemyManager : MonoBehaviour
             child.GetComponent<EnemyMovement>().GameRestart();
         }
     }
+
+    void Awake()
+    {
+        // other instructions
+        GameManager.instance.gameRestart.AddListener(GameRestart);
+    }
+
 }

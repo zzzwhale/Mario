@@ -1,22 +1,34 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
-    public Transform target; // Drag Mario here
-    public float smoothSpeed = 0.125f;
-    public Vector3 offset;
 
-    void LateUpdate()
+    public Transform player; // Mario's Transform
+    public Transform endLimit; // GameObject that indicates end of map
+    private float offset; // initial x-offset between camera and Mario
+    private float startX; // smallest x-coordinate of the Camera
+    private float endX; // largest x-coordinate of the camera
+    private float viewportHalfWidth;
+
+    void Start()
     {
-        if (target == null) return;
-
-        float targetX = target.position.x + offset.x;
-        float lockedY = offset.y;
-
-        // Use offset.z (-10) instead of target.position.z (0)
-        Vector3 desiredPosition = new Vector3(targetX, lockedY, offset.z);
-
-        Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
-        transform.position = smoothedPosition;
+        // get coordinate of the bottomleft of the viewport
+        // z doesn't matter since the camera is orthographic
+        Vector3 bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, 0)); // the z-component is the distance of the resulting plane from the camera 
+        viewportHalfWidth = Mathf.Abs(bottomLeft.x - this.transform.position.x);
+        offset = this.transform.position.x - player.position.x;
+        startX = this.transform.position.x;
+        endX = endLimit.transform.position.x - viewportHalfWidth;
     }
+
+    void Update()
+    {
+        float desiredX = player.position.x + offset;
+        // check if desiredX is within startX and endX
+        if (desiredX > startX && desiredX < endX)
+            this.transform.position = new Vector3(desiredX, this.transform.position.y, this.transform.position.z);
+    }
+
 }

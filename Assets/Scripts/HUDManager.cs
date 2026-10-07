@@ -5,43 +5,60 @@ using TMPro;
 
 public class HUDManager : MonoBehaviour
 {
-  
-
-    // I have 2 score text objects, one for in-game and one for game over
+    // Your two score text objects
     public TextMeshProUGUI scoreTextInGame;
     public TextMeshProUGUI scoreTextGameOver;
     public Transform restartButton;
-
     public GameObject gameOverPanel;
-    // Start is called before the first frame update
-    void Start()
+
+    public void Awake()
     {
+        // Subscribe to events safely
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.gameStart.AddListener(GameStart);
+            GameManager.instance.gameOver.AddListener(GameOver);
+            GameManager.instance.gameRestart.AddListener(GameStart);
+            GameManager.instance.scoreChange.AddListener(SetScore);
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    void Start()
     {
-
+        // Grab the carried-over score immediately on load
+        if (GameManager.instance != null)
+        {
+            SetScore(GameManager.instance.Score);
+        }
     }
 
     public void GameStart()
     {
-        // hide gameover panel
-        gameOverPanel.SetActive(false);
-        
+        // Hide game over panel on start
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(false);
+        }
     }
 
     public void SetScore(int score)
     {
-        scoreTextInGame.text = "Score: " + score;
-        scoreTextGameOver.text = "Score: " + score;
+        if (scoreTextInGame != null)
+        {
+            scoreTextInGame.text = "Score: " + score;
+        }
+        if (scoreTextGameOver != null)
+        {
+            scoreTextGameOver.text = "Score: " + score;
+        }
     }
-
 
     public void GameOver()
     {
         Debug.Log("HUDManager.GameOver called, panel = " + gameOverPanel);
-        gameOverPanel.SetActive(true);
-        
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+        }
     }
 }

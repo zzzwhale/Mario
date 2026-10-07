@@ -7,6 +7,12 @@ public class BrickHit : MonoBehaviour
     public AudioClip coinSound; // <-- Drag your coin sound here in the Inspector
     private AudioSource audioSource; // <-- Holds the audio component
 
+    public GameObject mushroom;
+    public AudioClip mushroomSound; // <-- Drag your mushroom sound here in the Inspector
+
+    public Animator brickAnimator; // Animator for the brick
+
+
     private Vector3 originalPosition;
     private bool isBouncing = false;
     private bool hasCoin = true;
@@ -15,6 +21,7 @@ public class BrickHit : MonoBehaviour
     {
         originalPosition = transform.position;
         audioSource = GetComponent<AudioSource>(); // Get the AudioSource on the brick
+        brickAnimator.SetBool("isHit", false); // Ensure the brick starts in the "not hit" state)
 
         if (coin != null)
         {
@@ -55,6 +62,7 @@ public class BrickHit : MonoBehaviour
             yield return null;
         }
         transform.position = targetPos;
+        brickAnimator.SetBool("isHit", true); // Ensure the brick starts in the "not hit" state)
 
         // 2. Pop the coin (first hit only)
         if (hasCoin && coin != null)
@@ -82,6 +90,9 @@ public class BrickHit : MonoBehaviour
             yield return null;
         }
         transform.position = originalPosition;
+
+        // Reset animator state so it goes back to normal
+        brickAnimator.SetBool("isHit", true);
 
         isBouncing = false;
     }

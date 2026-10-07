@@ -2,48 +2,57 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float speed = 5;
+    public float speed;
     private Rigidbody2D marioBody;
-    public float upSpeed = 10;
+    public float upSpeed;
     private bool onGroundState = true;
 
-    public float maxSpeed = 20;
+    public float maxSpeed;
     private SpriteRenderer marioSprite;
     private bool faceRightState = true;
 
     
     public GameObject enemies;
+    public bool IsAlive => alive;
 
-   
 
-    
+
     private bool moving = false;
 
     // Added from week 2 lab
     public Animator marioAnimator;
+
+    [System.NonSerialized]
     private bool alive = true;        // Set to true so Mario can move and jump by default
     private bool jumpedState = false; // Tracks if the initial jump happened for a jumphold
 
+    public float deathImpulse = 15;
+
+    // Camera
     public Transform gameCamera;
 
     public GameManager gameManager;
 
 
+    // Audio
+    public AudioSource marioAudio;
+
+    public AudioClip marioDeath;
+
+  
+
     // Check if Mario is on the ground
     void OnCollisionEnter2D(Collision2D col)
     {
-        if (col.gameObject.CompareTag("Ground"))
+        if ((col.gameObject.CompareTag("Ground") || col.gameObject.CompareTag("Enemy") || col.gameObject.CompareTag("Obstacles")) && !onGroundState)
         {
             onGroundState = true;
-
-            // ---> THIS IS THE PART THAT WAS ADDED/EDITED:
-            if (marioAnimator != null)
-            {
-                marioAnimator.SetBool("onGround", onGroundState);
-            }
+            // update animator state
+            marioAnimator.SetBool("onGround", onGroundState);
         }
     }
 
@@ -57,56 +66,50 @@ public class PlayerMovement : MonoBehaviour
         marioAnimator = GetComponent<Animator>();
 
         // FORCE MARIO TO START IDLE
+        // update animator state
+        marioAnimator.SetBool("onGround", onGroundState);
         marioAnimator.SetBool("isRunning", false);
         marioAnimator.SetBool("isAlive", true);
 
+        
+
     }
+
 
     // Update is called once per frame
+
     void Update()
     {
-        marioAnimator.SetFloat("xSpeed", Mathf.Abs(marioBody.linearVelocity.x));
+        // Poll horizontal keyboard input continuously
+        float horizontalInput = Input.GetAxisRaw("Horizontal");
+        if (horizontalInput != 0)
+        {
+            MoveCheck((int)Mathf.Sign(horizontalInput));
+        }
+        else
+        {
+            MoveCheck(0);
+        }
 
-    }
-
-    // FixedUpdate is called 50 times a second
-    void FlipMarioSprite(int value)
-    {
-        if (value == -1 && faceRightState)
+        if (Input.GetKeyDown("a") && faceRightState)
         {
             faceRightState = false;
             marioSprite.flipX = true;
-            if (marioBody.linearVelocity.x > 0.05f)
+            if (marioBody.linearVelocity.x > 0.1f)
                 marioAnimator.SetTrigger("onSkid");
-
         }
 
-        else if (value == 1 && !faceRightState)
+        if (Input.GetKeyDown("d") && !faceRightState)
         {
             faceRightState = true;
             marioSprite.flipX = false;
-            if (marioBody.linearVelocity.x < -0.05f)
+            if (marioBody.linearVelocity.x < -0.1f)
                 marioAnimator.SetTrigger("onSkid");
         }
+
+        marioAnimator.SetFloat("xSpeed", Mathf.Abs(marioBody.linearVelocity.x));
     }
 
-
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.gameObject.CompareTag("Enemy"))
-        {
-            // If we are stomping from above, JumpOverGoomba handles it. 
-            // We only want to trigger Game Over if Mario hits the enemy sideways or from below!
-            Debug.Log("Collided with enemy trigger!");
-
-            
-            // mario dies
-            marioAnimator.SetBool("isAlive", false);
-            // Call Game Over function
-            GameObject.FindGameObjectWithTag("Manager").GetComponent<GameManager>().GameOver();
-
-        }
-    }
     // FixedUpdate may be called once per frame. See documentation for details.
     void FixedUpdate()
     {
@@ -115,10 +118,37 @@ public class PlayerMovement : MonoBehaviour
             Move(faceRightState == true ? 1 : -1);
         }
 
-      
+        if (Input.GetKeyDown("space") && onGroundState)
+        {
+            marioBody.AddForce(Vector2.up * upSpeed, ForceMode2D.Impulse);
+            onGroundState = false;
+            // update animator state
+            marioAnimator.SetBool("onGround", onGroundState);
+        }
+
 
     }
-    
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("Enemy") && alive)
+        {
+            Debug.Log("Collided with goomba!");
+
+            // play death animation
+            marioAnimator.Play("mario_death");
+            marioAudio.PlayOneShot(marioDeath);
+            alive = false;
+
+
+            Invoke("TriggerGameOver", 0.1f);
+        }
+    }
+    void TriggerGameOver()
+    {
+        // Call Game Over function
+        GameObject.FindGameObjectWithTag("Manager").GetComponent<GameManager>().GameOver();
+    }
     // Movements
     void Move(int value)
     {
@@ -139,7 +169,7 @@ public class PlayerMovement : MonoBehaviour
         }   
         else
         {
-            FlipMarioSprite(value);
+            //FlipMarioSprite(value);
             moving = true;
             Move(value);
             marioAnimator.SetBool("isRunning", true); // Set the "isRunning" parameter to true when moving
@@ -174,6 +204,16 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    void PlayJumpSound()
+    {
+        // play jump sound
+        marioAudio.PlayOneShot(marioAudio.clip);
+    }
+
+    void PlayDeathImpulse()
+    {
+        marioBody.AddForce(Vector2.up * deathImpulse, ForceMode2D.Impulse);
+    }
 
     // Button listener
     public void RestartButtonCallback()
@@ -185,8 +225,14 @@ public class PlayerMovement : MonoBehaviour
         // resume time
         Time.timeScale = 1.0f;
     }
+    void GameOverScene()
+    {
+        // stop time
+        Time.timeScale = 0.0f;
+        // set gameover scene
+        gameManager.GameOver(); // replace this with whichever way you triggered the game over screen for Checkoff 1
+    }
 
-   
     public void GameRestart()
     {
         // reset position
@@ -204,6 +250,14 @@ public class PlayerMovement : MonoBehaviour
 
         // reset camera position
         gameCamera.position = new Vector3(0, 0, -10);
+
+    }
+
+   public void Awake()
+    {
+        //base.Awake();
+        GameManager.instance.gameRestart.AddListener(GameRestart);
+
     }
 
 

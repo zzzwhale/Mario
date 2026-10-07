@@ -7,6 +7,7 @@ TagManager:
   - Ground
   - Enemy
   - Manager
+  - Obstacles
   layers:
   - Default
   - TransparentFX
@@ -14,9 +15,9 @@ TagManager:
   - Ground
   - Water
   - UI
-  - 
-  - 
-  - 
+  - Interactive
+  - Obstacles
+  - Enemy
   - 
   - 
   - 
@@ -49,6 +50,9 @@ TagManager:
     locked: 0
   - name: Mario
     uniqueID: 3242543051
+    locked: 0
+  - name: Top
+    uniqueID: 1999354819
     locked: 0
   m_RenderingLayers:
   - Default
