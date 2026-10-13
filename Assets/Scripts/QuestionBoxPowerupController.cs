@@ -1,42 +1,62 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class QuestionBoxPowerupController : MonoBehaviour, IPowerupController
 {
+
+    public Animator questionBoxAnimator;
     public Animator powerupAnimator;
-    public BasePowerup powerup; // reference to this question box's powerup
+    public BasePowerup powerup;
+
+
+    private Rigidbody2D mushroomrb;
+    private float restY;
+    private bool isUsed = false;
 
     void Start()
     {
+        mushroomrb = GetComponent<Rigidbody2D>();
+        questionBoxAnimator = GetComponent<Animator>();
+        restY = mushroomrb.position.y;
 
+        powerupAnimator.gameObject.SetActive(false);   // hide the mushroom, like the coin
     }
 
-    // Update is called once per frame
-    void Update()
+    // the block can go up, but never below its resting height
+    void FixedUpdate()
     {
-
-    }
-
-
-    private void OnCollisionEnter2D(Collision2D other)
-    {
-        if (other.gameObject.tag == "Player" && !powerup.hasSpawned)
+        if (isUsed) return;
+        if (mushroomrb.position.y < restY)
         {
-            // show disabled sprite
-            this.GetComponent<Animator>().SetTrigger("spawned");
-            // spawn the powerup
-            powerupAnimator.SetTrigger("spawned");
+            mushroomrb.position = new Vector2(mushroomrb.position.x, restY);
+            if (mushroomrb.linearVelocity.y < 0)
+                mushroomrb.linearVelocity = new Vector2(mushroomrb.linearVelocity.x, 0);
         }
     }
 
-    // used by animator
-    public void Disable()
+    void OnCollisionEnter2D(Collision2D collision)
     {
-        this.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Static;
-        transform.localPosition = new Vector3(0, 0, 0);
+        isUsed = true;
+        questionBoxAnimator.SetBool("isHit", true);                 // play the used animation
+        powerupAnimator.gameObject.SetActive(true);          // appear first
+        powerupAnimator.SetTrigger("spawned");               // then pop out
+        StartCoroutine(LockBlock());
     }
 
+    // let the block finish one bounce, then freeze it
+    IEnumerator LockBlock()
+    {
+        yield return new WaitForSeconds(0.3f);
+        Disable();
+    }
 
+    public void Disable()
+    {
+        SpringJoint2D spring = GetComponent<SpringJoint2D>();
+        if (spring != null) spring.enabled = false;
 
+        mushroomrb.linearVelocity = Vector2.zero;
+        mushroomrb.bodyType = RigidbodyType2D.Static;
+        transform.localPosition = new Vector3(0, 0, 0);
+    }
 }

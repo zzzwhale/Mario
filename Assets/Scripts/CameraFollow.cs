@@ -41,14 +41,13 @@ public class CameraFollow : MonoBehaviour
         startX = transform.position.x;
         endX = endLimit.position.x - viewportHalfWidth;
 
-        if (endX < startX)
-            Debug.LogWarning("CameraFollow: endX is left of startX, so the camera can't move. Move endLimit further right.", this);
+       
     }
 
     void LateUpdate()
     {
         float desiredX = Mathf.Clamp(player.position.x + offset, startX, Mathf.Max(startX, endX));
         transform.position = new Vector3(desiredX, transform.position.y, transform.position.z);
-        Debug.Log($"player={player.name} playerX={player.position.x:F2} offset={offset:F2} startX={startX:F2} endX={endX:F2} camX={transform.position.x:F2}", this);
+   
     }
 }

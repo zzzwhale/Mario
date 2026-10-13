@@ -38,8 +38,13 @@ public class MagicMushroomPowerup : BasePowerup
     // interface implementation
     public override void SpawnPowerup()
     {
+        Debug.Log("Magic Mushroom spawned!");
         spawned = true;
-        rigidBody.AddForce(Vector2.right * 3, ForceMode2D.Impulse); // move to the right
+
+        GetComponent<Animator>().enabled = false;   // animation is done, hand over to physics
+        GetComponent<Collider2D>().enabled = true;
+        rigidBody.bodyType = RigidbodyType2D.Dynamic;
+        rigidBody.AddForce(Vector2.right * 3, ForceMode2D.Impulse);
     }
 
 
