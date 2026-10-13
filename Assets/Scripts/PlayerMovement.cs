@@ -11,9 +11,9 @@ public class PlayerMovement : MonoBehaviour
     private SpriteRenderer marioSprite;
     private bool faceRightState = true;
 
-    /// <summary>
+    
     // speed
-    /// </summary>
+    
     public float speed;
     public float upSpeed;
     public float maxSpeed;
@@ -44,11 +44,17 @@ public class PlayerMovement : MonoBehaviour
 
 
     // Audio
-    public AudioSource marioAudio;
+    public AudioSource marioAudioSource;
+    public AudioSource staticEnvironmentAudioSource; // plays the theme music
+    public AudioClip marioDeathAudio;
+    public AudioClip marioJumpAudio;
 
-    public AudioClip marioDeath;
+    // stomping audio is in JumpOverGoomba script
 
-  
+    // current mario jump sound is played from animation event
+    // the death sound is played from the OnTriggerEnter2D function when Mario collides with an enemy 
+
+
 
     // Check if Mario is on the ground
     void OnCollisionEnter2D(Collision2D col)
@@ -103,17 +109,24 @@ public class PlayerMovement : MonoBehaviour
 
             // play death animation
             marioAnimator.Play("mario_death");
-            marioAudio.PlayOneShot(marioDeath);
+            marioAudioSource.PlayOneShot(marioDeathAudio);
             alive = false;
 
+            // stop the theme music
+            staticEnvironmentAudioSource.Stop(); // Stop background music
 
+            // wait for 0.1s before calling TriggerGameOver function to allow death animation to play
             Invoke("TriggerGameOver", 0.1f);
         }
     }
     void TriggerGameOver()
     {
-        // Call Game Over function
+        // Call Game Over function in GameManager
         GameObject.FindGameObjectWithTag("Manager").GetComponent<GameManager>().GameOver();
+
+        
+
+
     }
 
     // Actual Movement function, called from FixedUpdate
@@ -180,10 +193,11 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    // used for animation event to play sounds
     void PlayJumpSound()
     {
         // play jump sound
-        marioAudio.PlayOneShot(marioAudio.clip);
+        marioAudioSource.PlayOneShot(marioJumpAudio);
     }
 
     void PlayDeathImpulse()
@@ -191,45 +205,6 @@ public class PlayerMovement : MonoBehaviour
         marioBody.AddForce(Vector2.up * deathImpulse, ForceMode2D.Impulse);
     }
 
-    // Button listener
-    public void RestartButtonCallback()
-    {
-        Debug.Log("Restart!");
-        // reset everything
-        
-        GameRestart();
-        // resume time
-        Time.timeScale = 1.0f;
-    }
-    void GameOverScene()
-    {
-        // stop time
-        Time.timeScale = 0.0f;
-        // set gameover scene
-        gameManager.GameOver(); // replace this with whichever way you triggered the game over screen for Checkoff 1
-    }
-
-    //public void GameRestart()
-    //{
-    //    // reset position
-    //    marioBody.transform.position = new Vector3(-4f, -2.5f, 0.0f); // change this position to my starting position of Mario
-
-    //    // reset sprite direction
-    //    faceRightState = true;
-    //    marioSprite.flipX = false;
-
-    //    marioAnimator.SetBool("isAlive", true);
-
-    //    // reset animation
-    //    marioAnimator.SetTrigger("gameRestart");
-    //    alive = true;
-
-    //    // reset camera position
-    //    gameCamera.position = new Vector3(0, 0, -10);
-
-
-
-    //}
 
     public void GameRestart()
     {
@@ -256,6 +231,12 @@ public class PlayerMovement : MonoBehaviour
 
         // reset camera position
         gameCamera.position = new Vector3(0, 0, -10);
+
+        Debug.Log("Player Movement script restarted!");
+
+        // stop death sound if it's still playing
+        marioAudioSource.Stop();
+
     }
 
     public void Awake()

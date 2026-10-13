@@ -5,11 +5,13 @@ using TMPro;
 
 public class HUDManager : MonoBehaviour
 {
+
+    // Have to assign them in the inspector
     // Your two score text objects
     public TextMeshProUGUI scoreTextInGame;
     public TextMeshProUGUI scoreTextGameOver;
     public Transform restartButton;
-    public GameObject gameOverPanel;
+    public GameObject gameOverCanva;
 
     public void Awake()
     {
@@ -35,9 +37,9 @@ public class HUDManager : MonoBehaviour
     public void GameStart()
     {
         // Hide game over panel on start
-        if (gameOverPanel != null)
+        if (gameOverCanva != null)
         {
-            gameOverPanel.SetActive(false);
+            gameOverCanva.SetActive(false);
         }
     }
 
@@ -55,10 +57,10 @@ public class HUDManager : MonoBehaviour
 
     public void GameOver()
     {
-        Debug.Log("HUDManager.GameOver called, panel = " + gameOverPanel);
-        if (gameOverPanel != null)
+        Debug.Log("HUDManager.GameOver called, panel = " + gameOverCanva);
+        if (gameOverCanva != null)
         {
-            gameOverPanel.SetActive(true);
+            gameOverCanva.SetActive(true);
         }
     }
 }

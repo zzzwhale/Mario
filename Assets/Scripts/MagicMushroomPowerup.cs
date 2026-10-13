@@ -8,11 +8,19 @@ public class MagicMushroomPowerup : BasePowerup
 {
     // setup this object's type
     // instantiate variables
+
+    // Audio
+    public AudioSource mushroomAudioSource;
+    public AudioClip mushroomSpawnSound;
+    public AudioClip mushroomEatSound;
+
     protected override void Start()
     {
         base.Start(); // call base class Start()
         this.type = PowerupType.MagicMushroom;
     }
+
+
 
     void OnCollisionEnter2D(Collision2D col)
     {
@@ -20,8 +28,11 @@ public class MagicMushroomPowerup : BasePowerup
         {
             // TODO: do something when colliding with Player
 
-            // then destroy powerup (optional)
-            DestroyPowerup();
+            // hide the mushroom and play sound, then destroy after sound is done
+            mushroomAudioSource.PlayOneShot(mushroomEatSound);
+            GetComponent<SpriteRenderer>().enabled = false;
+            GetComponent<Collider2D>().enabled = false;
+            Destroy(gameObject, mushroomEatSound.length);
 
         }
         else if (col.gameObject.layer == 10) // else if hitting Pipe, flip travel direction
@@ -41,10 +52,12 @@ public class MagicMushroomPowerup : BasePowerup
         Debug.Log("Magic Mushroom spawned!");
         spawned = true;
 
+        mushroomAudioSource.PlayOneShot(mushroomSpawnSound);
+
         GetComponent<Animator>().enabled = false;   // animation is done, hand over to physics
         GetComponent<Collider2D>().enabled = true;
-        rigidBody.bodyType = RigidbodyType2D.Dynamic;
-        rigidBody.AddForce(Vector2.right * 3, ForceMode2D.Impulse);
+        rigidBody.linearVelocity = new Vector2(5f, 0f); // mushroom starts moving after popping out
+    
     }
 
 

@@ -19,6 +19,7 @@ public class AnimationEventIntTool : MonoBehaviour
 
     }
 
+    // Need this for animation events to trigger the UnityEvent with an int parameter
     public void TriggerIntEvent()
     {
 

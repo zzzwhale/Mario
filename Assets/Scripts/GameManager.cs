@@ -42,7 +42,7 @@ public class GameManager : Singleton<GameManager>
 
     public void TriggerEnemyStomp()
     {
-        enemyStomped.Invoke();
+        //enemyStomped.Invoke();
         IncreaseScore(1);
     }
 

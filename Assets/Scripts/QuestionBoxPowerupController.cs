@@ -10,15 +10,19 @@ public class QuestionBoxPowerupController : MonoBehaviour, IPowerupController
     public BasePowerup powerup;
 
 
-    private Rigidbody2D mushroomrb;
+   
+
+    private Rigidbody2D powerUpRb;
     private float restY;
+    
+
     private bool isUsed = false; // check if the question box has been hit
 
     void Start()
     {
-        mushroomrb = GetComponent<Rigidbody2D>();
+        powerUpRb = GetComponent<Rigidbody2D>();
         questionBoxAnimator = GetComponent<Animator>();
-        restY = mushroomrb.position.y;
+        restY = powerUpRb.position.y;
 
         powerupAnimator.gameObject.SetActive(false);   // hide the mushroom, like the coin
     }
@@ -27,26 +31,32 @@ public class QuestionBoxPowerupController : MonoBehaviour, IPowerupController
     void FixedUpdate()
     {
         if (isUsed) return;
-        if (mushroomrb.position.y < restY)
+        if (powerUpRb.position.y < restY)
         {
-            mushroomrb.position = new Vector2(mushroomrb.position.x, restY);
-            if (mushroomrb.linearVelocity.y < 0)
-                mushroomrb.linearVelocity = new Vector2(mushroomrb.linearVelocity.x, 0);
+            powerUpRb.position = new Vector2(powerUpRb.position.x, restY);
+            if (powerUpRb.linearVelocity.y < 0)
+                powerUpRb.linearVelocity = new Vector2(powerUpRb.linearVelocity.x, 0);
         }
     }
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (isUsed) return;                                   // already used? ignore
-        if (!collision.gameObject.CompareTag("Player")) return;   // only Mario counts
+        if (isUsed) return;
+        if (!collision.gameObject.CompareTag("Player")) return;
 
         if (Mathf.Abs(collision.contacts[0].normal.y) > 0.5f &&
             collision.transform.position.y < transform.position.y)
         {
             isUsed = true;
-            questionBoxAnimator.SetBool("isHit", true);       // play the used animation
-            powerupAnimator.gameObject.SetActive(true);       // appear first
-            powerupAnimator.SetTrigger("spawned");            // then pop out
+
+            // stop Mario's upward motion so he doesn't stick to the block
+            Rigidbody2D marioRb = collision.gameObject.GetComponent<Rigidbody2D>();
+            if (marioRb != null)
+                marioRb.linearVelocity = new Vector2(marioRb.linearVelocity.x, 0);
+
+            questionBoxAnimator.SetBool("isHit", true);
+            powerupAnimator.gameObject.SetActive(true);
+            powerupAnimator.SetTrigger("spawned");
             StartCoroutine(LockBlock());
         }
     }
@@ -63,8 +73,10 @@ public class QuestionBoxPowerupController : MonoBehaviour, IPowerupController
         SpringJoint2D spring = GetComponent<SpringJoint2D>();
         if (spring != null) spring.enabled = false;
 
-        mushroomrb.linearVelocity = Vector2.zero;
-        mushroomrb.bodyType = RigidbodyType2D.Static;
+        powerUpRb.linearVelocity = Vector2.zero;
+        powerUpRb.bodyType = RigidbodyType2D.Static;
         transform.localPosition = new Vector3(0, 0, 0);
     }
+
+
 }

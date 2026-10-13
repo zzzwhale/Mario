@@ -3,7 +3,7 @@ using UnityEngine;
 public class CameraFollow : MonoBehaviour
 {
     public Transform player;     // Mario (auto-found by tag if left empty)
-    public Transform endLimit;   // GameObject marking the end of the map
+    public Transform endLimit;   // GameObject marking the end of the map. Need to drag in in the Inspector, else camera will not work
 
     private float offset;        // horizontal distance between camera and Mario at the start
     private float startX;        // camera can't go left of this
@@ -34,7 +34,7 @@ public class CameraFollow : MonoBehaviour
             return;
         }
 
-        Camera cam = GetComponent<Camera>();
+        Camera cam = GetComponent<Camera>(); 
         float viewportHalfWidth = cam.orthographicSize * cam.aspect;
 
         offset = transform.position.x - player.position.x;
