@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using static UnityEngine.LowLevelPhysics2D.PhysicsShape;
 
 public class QuestionBoxPowerupController : MonoBehaviour, IPowerupController
 {
@@ -11,7 +12,7 @@ public class QuestionBoxPowerupController : MonoBehaviour, IPowerupController
 
     private Rigidbody2D mushroomrb;
     private float restY;
-    private bool isUsed = false;
+    private bool isUsed = false; // check if the question box has been hit
 
     void Start()
     {
@@ -36,11 +37,18 @@ public class QuestionBoxPowerupController : MonoBehaviour, IPowerupController
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        isUsed = true;
-        questionBoxAnimator.SetBool("isHit", true);                 // play the used animation
-        powerupAnimator.gameObject.SetActive(true);          // appear first
-        powerupAnimator.SetTrigger("spawned");               // then pop out
-        StartCoroutine(LockBlock());
+        if (isUsed) return;                                   // already used? ignore
+        if (!collision.gameObject.CompareTag("Player")) return;   // only Mario counts
+
+        if (Mathf.Abs(collision.contacts[0].normal.y) > 0.5f &&
+            collision.transform.position.y < transform.position.y)
+        {
+            isUsed = true;
+            questionBoxAnimator.SetBool("isHit", true);       // play the used animation
+            powerupAnimator.gameObject.SetActive(true);       // appear first
+            powerupAnimator.SetTrigger("spawned");            // then pop out
+            StartCoroutine(LockBlock());
+        }
     }
 
     // let the block finish one bounce, then freeze it
