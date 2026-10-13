@@ -18,6 +18,12 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private int score = 0;
     public int Score => score;
 
+    override public void Awake()
+        {
+            base.Awake();
+            Debug.Log("awake called");
+        }
+
     void Start()
     {
         gameStart.Invoke();
@@ -66,9 +72,5 @@ public class GameManager : Singleton<GameManager>
         gameOver.Invoke();
     }
 
-    override public void Awake()
-    {
-        base.Awake();
-        Debug.Log("awake called");
-    }
+    
 }

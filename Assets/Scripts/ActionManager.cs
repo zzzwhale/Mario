@@ -1,6 +1,7 @@
 
 using UnityEngine;
 using UnityEngine.Events;
+// uses the input system
 using UnityEngine.InputSystem;
 
 public class ActionManager : MonoBehaviour
@@ -38,13 +39,14 @@ public class ActionManager : MonoBehaviour
 
     }
 
-    // called twice, when pressed and unpressed
+    // movement
     public void OnMoveAction(InputAction.CallbackContext context)
     {
         // Debug.Log("OnMoveAction callback invoked");
-        if (context.started)
+        if (context.performed)
         {
-            Debug.Log("move started");
+            Debug.Log("move start");
+            // reads the input value and converts it to an integer (1 for right, -1 for left)
             int faceRight = context.ReadValue<float>() > 0 ? 1 : -1;
             moveCheck.Invoke(faceRight);
         }

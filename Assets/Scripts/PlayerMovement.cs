@@ -6,20 +6,25 @@ using UnityEngine.SceneManagement;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float speed;
-    private Rigidbody2D marioBody;
-    public float upSpeed;
-    private bool onGroundState = true;
 
-    public float maxSpeed;
+    private Rigidbody2D marioBody;
     private SpriteRenderer marioSprite;
     private bool faceRightState = true;
 
-    
+    /// <summary>
+    // speed
+    /// </summary>
+    public float speed;
+    public float upSpeed;
+    public float maxSpeed;
+    private int moveDirection = 0;
+
+
+
     public GameObject enemies;
     public bool IsAlive => alive;
 
-
+    private bool onGroundState = true;
 
     private bool moving = false;
 
@@ -71,8 +76,6 @@ public class PlayerMovement : MonoBehaviour
         marioAnimator.SetBool("isRunning", false);
         marioAnimator.SetBool("isAlive", true);
 
-        
-
     }
 
 
@@ -80,32 +83,6 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // Poll horizontal keyboard input continuously
-        float horizontalInput = Input.GetAxisRaw("Horizontal");
-        if (horizontalInput != 0)
-        {
-            MoveCheck((int)Mathf.Sign(horizontalInput));
-        }
-        else
-        {
-            MoveCheck(0);
-        }
-
-        if (Input.GetKeyDown("a") && faceRightState)
-        {
-            faceRightState = false;
-            marioSprite.flipX = true;
-            if (marioBody.linearVelocity.x > 0.1f)
-                marioAnimator.SetTrigger("onSkid");
-        }
-
-        if (Input.GetKeyDown("d") && !faceRightState)
-        {
-            faceRightState = true;
-            marioSprite.flipX = false;
-            if (marioBody.linearVelocity.x < -0.1f)
-                marioAnimator.SetTrigger("onSkid");
-        }
 
         marioAnimator.SetFloat("xSpeed", Mathf.Abs(marioBody.linearVelocity.x));
     }
@@ -113,19 +90,8 @@ public class PlayerMovement : MonoBehaviour
     // FixedUpdate may be called once per frame. See documentation for details.
     void FixedUpdate()
     {
-        if (alive && moving)
-        {
-            Move(faceRightState == true ? 1 : -1);
-        }
-
-        if (Input.GetKeyDown("space") && onGroundState)
-        {
-            marioBody.AddForce(Vector2.up * upSpeed, ForceMode2D.Impulse);
-            onGroundState = false;
-            // update animator state
-            marioAnimator.SetBool("onGround", onGroundState);
-        }
-
+        if (alive && moveDirection != 0)
+            Move(moveDirection);
 
     }
 
@@ -149,34 +115,44 @@ public class PlayerMovement : MonoBehaviour
         // Call Game Over function
         GameObject.FindGameObjectWithTag("Manager").GetComponent<GameManager>().GameOver();
     }
-    // Movements
+
+    // Actual Movement function, called from FixedUpdate
     void Move(int value)
     {
 
-        Vector2 movement = new Vector2(value, 0);
-        // check if it doesn't go beyond maxSpeed
-        if (marioBody.linearVelocity.magnitude < maxSpeed)
-            marioBody.AddForce(movement * speed);
+        if (Mathf.Abs(marioBody.linearVelocity.x) < maxSpeed)
+            marioBody.AddForce(new Vector2(value, 0) * speed);
     }
 
+    // Receives the move direction from the ActionManager and updates the animator state accordingly
     public void MoveCheck(int value)
-    {   
-        // if mario is not moving
-        if (value == 0)
-        {
-            moving = false;
-            marioAnimator.SetBool("isRunning", false);
-        }   
-        else
-        {
-            //FlipMarioSprite(value);
-            moving = true;
-            Move(value);
-            marioAnimator.SetBool("isRunning", true); // Set the "isRunning" parameter to true when moving
+    {
+        if (!alive) return;
 
-        }
+        Debug.Log("MoveCheck received: " + value);
+        moveDirection = value;
+        marioAnimator.SetBool("isRunning", value != 0);
+
+        if (value != 0)
+            FaceDirection(value);
     }
 
+    // Flips the sprite based on the direction of movement and triggers the skidding animation if necessary
+    private void FaceDirection(int value)
+    {
+        bool wantsRight = value > 0;
+        if (wantsRight == faceRightState) return;
+
+        faceRightState = wantsRight;
+        marioSprite.flipX = !wantsRight;
+
+        float vx = marioBody.linearVelocity.x;
+        bool skidding = wantsRight ? vx < -0.1f : vx > 0.1f;
+        if (skidding)
+            marioAnimator.SetTrigger("onSkid");
+    }
+
+    // Jump function, called from ActionManager when jump button is pressed
     public void Jump()
     {
         if (alive && onGroundState)
@@ -191,8 +167,8 @@ public class PlayerMovement : MonoBehaviour
 
         }
     }
-   
 
+    // Jump hold function, called from ActionManager when jump button is held down
     public void JumpHold()
     {
         if (alive && jumpedState)
@@ -233,11 +209,41 @@ public class PlayerMovement : MonoBehaviour
         gameManager.GameOver(); // replace this with whichever way you triggered the game over screen for Checkoff 1
     }
 
+    //public void GameRestart()
+    //{
+    //    // reset position
+    //    marioBody.transform.position = new Vector3(-4f, -2.5f, 0.0f); // change this position to my starting position of Mario
+
+    //    // reset sprite direction
+    //    faceRightState = true;
+    //    marioSprite.flipX = false;
+
+    //    marioAnimator.SetBool("isAlive", true);
+
+    //    // reset animation
+    //    marioAnimator.SetTrigger("gameRestart");
+    //    alive = true;
+
+    //    // reset camera position
+    //    gameCamera.position = new Vector3(0, 0, -10);
+
+
+
+    //}
+
     public void GameRestart()
     {
         // reset position
-        marioBody.transform.position = new Vector3(-4f, -2.5f, 0.0f); // change this position to my starting position of Mario
-        
+        marioBody.transform.position = new Vector3(-4f, -2.5f, 0.0f);
+
+        // reset movement state
+        moveDirection = 0;
+        marioBody.linearVelocity = Vector2.zero;
+        onGroundState = true;
+        jumpedState = false;
+        marioAnimator.SetBool("onGround", true);
+        marioAnimator.SetBool("isRunning", false);
+
         // reset sprite direction
         faceRightState = true;
         marioSprite.flipX = false;
@@ -250,10 +256,9 @@ public class PlayerMovement : MonoBehaviour
 
         // reset camera position
         gameCamera.position = new Vector3(0, 0, -10);
-
     }
 
-   public void Awake()
+    public void Awake()
     {
         //base.Awake();
         GameManager.instance.gameRestart.AddListener(GameRestart);
