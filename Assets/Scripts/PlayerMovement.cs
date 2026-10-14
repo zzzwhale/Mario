@@ -7,16 +7,26 @@ using UnityEngine.SceneManagement;
 public class PlayerMovement : MonoBehaviour
 {
 
+    // Game Constants
+    public GameConstants gameConstants;
+    float deathImpulse;
+    float upSpeed;
+    float maxSpeed;
+    float speed;
+
+    // Mario 
+
     private Rigidbody2D marioBody;
     private SpriteRenderer marioSprite;
     private bool faceRightState = true;
+    public Animator marioAnimator;
 
-    
+
     // speed
     
-    public float speed;
-    public float upSpeed;
-    public float maxSpeed;
+    //public float speed;
+    //public float upSpeed;
+    //public float maxSpeed;
     private int moveDirection = 0;
 
 
@@ -28,14 +38,14 @@ public class PlayerMovement : MonoBehaviour
 
     private bool moving = false;
 
-    // Added from week 2 lab
-    public Animator marioAnimator;
+    // states
+    
 
     [System.NonSerialized]
     private bool alive = true;        // Set to true so Mario can move and jump by default
     private bool jumpedState = false; // Tracks if the initial jump happened for a jumphold
 
-    public float deathImpulse = 15;
+    //public float deathImpulse = 15;
 
     // Camera
     public Transform gameCamera;
@@ -70,6 +80,13 @@ public class PlayerMovement : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+
+        // Set constants (done in lab4)
+        speed = gameConstants.speed;
+        maxSpeed = gameConstants.maxSpeed;
+        deathImpulse = gameConstants.deathImpulse;
+        upSpeed = gameConstants.upSpeed;
+
         // Set to be 60 FPS
         Application.targetFrameRate = 60;
         marioBody = GetComponent<Rigidbody2D>();
@@ -236,6 +253,8 @@ public class PlayerMovement : MonoBehaviour
 
         // stop death sound if it's still playing
         marioAudioSource.Stop();
+
+        staticEnvironmentAudioSource.Play(); // Restart background music
 
     }
 

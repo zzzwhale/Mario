@@ -1016,12 +1016,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6e872ca008ca441658a83ff7a3e04537, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  speed: 100
-  upSpeed: 30
-  maxSpeed: 8
-  enemies: {fileID: 1834579130}
+  gameConstants: {fileID: 11400000, guid: 3c9dc22808e669c4caea6fe98e76fb34, type: 2}
   marioAnimator: {fileID: 687907473}
-  deathImpulse: 15
+  enemies: {fileID: 1834579130}
   gameCamera: {fileID: 1646476344}
   gameManager: {fileID: 1790844308}
   marioAudioSource: {fileID: 687907472}

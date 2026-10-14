@@ -54,5 +54,11 @@ TagManager:
   - name: Top
     uniqueID: 1999354819
     locked: 0
+  - name: Powerup
+    uniqueID: 1039037365
+    locked: 0
+  - name: Questionbox
+    uniqueID: 3506221891
+    locked: 0
   m_RenderingLayers:
   - Default

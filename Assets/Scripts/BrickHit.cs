@@ -1,97 +1,70 @@
-using UnityEngine;
-
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
 
-public class BrickHit : MonoBehaviour
+public class Brick : MonoBehaviour
 {
-    public GameObject coin;
-    public AudioClip coinSound;
-    public GameObject mushroom;          // unused for now
-    public AudioClip mushroomSound;      // unused for now
-    public Animator brickAnimator;
+    [Header("Optional coin inside")]
+    public bool hasCoin = false;
+    public Animator coinAnimator;      // child coin (leave empty for a plain brick)
+    public int coinsInside = 1;
 
-  
+    public float bounceHeight = 0.3f;
+    public float bounceDuration = 0.15f;
 
-    private AudioSource audioSource;
     private Rigidbody2D rb;
-    private SpringJoint2D spring;
-    private float restY;                 // the brick's resting height (the floor)
-    private bool hasCoin = true;
-    private bool isUsed = false;
+    private bool isBouncing = false;
+    private bool isEmpty = false;
 
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>(); // get the Rigidbody2D component attached to the brick
-        spring = GetComponent<SpringJoint2D>();
-        audioSource = GetComponent<AudioSource>();
-        restY = rb.position.y;
-
-        // check if the brick has been hit before
-        brickAnimator.SetBool("isHit", false);
-        if (coin != null) coin.SetActive(false);
-    }
-
-    void FixedUpdate()
-    {
-        if (isUsed) return;
-
-        // Floor: the brick may go up, but never below its rest position
-        if (rb.position.y < restY)
-        {
-            rb.position = new Vector2(rb.position.x, restY);
-            if (rb.linearVelocity.y < 0)
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0);
-        }
+        rb = GetComponent<Rigidbody2D>();
+        if (coinAnimator != null)
+            coinAnimator.gameObject.SetActive(false);   // hide the coin until needed
     }
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (isUsed) return;
+        if (isBouncing) return;
         if (!collision.gameObject.CompareTag("Player")) return;
 
-        foreach (ContactPoint2D contact in collision.contacts)
+        // only count hits from below
+        float marioTop = collision.collider.bounds.max.y;
+        float brickBottom = GetComponent<Collider2D>().bounds.min.y;
+        if (marioTop > brickBottom + 0.1f) return;
+
+        // stop Mario going up so he doesn't stick to the brick
+        Rigidbody2D marioRb = collision.gameObject.GetComponent<Rigidbody2D>();
+        if (marioRb != null)
+            marioRb.linearVelocity = new Vector2(marioRb.linearVelocity.x, 0);
+
+        if (hasCoin && !isEmpty && coinAnimator != null)
         {
-            // Mario must be below the brick (head hit), not standing on top.
-            // the contact is on a top or bottom face, not the side & Mario should be below the brick, not above it
-            if (Mathf.Abs(contact.normal.y) > 0.5f &&
-                collision.transform.position.y < transform.position.y)
-            {
-                OnHitFromBelow();
-                break;
-            }
+            coinAnimator.gameObject.SetActive(true);
+            coinAnimator.SetTrigger("spawned");
+            coinsInside--;
+            if (coinsInside <= 0) isEmpty = true;
         }
+
+        StartCoroutine(Bounce());
     }
 
-    void OnHitFromBelow()
+    IEnumerator Bounce()
     {
-     
-
-        if (hasCoin && coin != null)
+        isBouncing = true;
+        Vector2 start = rb.position;
+        float t = 0f;
+        while (t < 1f)
         {
-            hasCoin = false;
-            isUsed = true;
-            brickAnimator.SetBool("isHit", true);
-
-            if (audioSource != null && coinSound != null)
-                audioSource.PlayOneShot(coinSound);
-
-            coin.transform.SetParent(null);
-            coin.transform.position = new Vector3(transform.position.x, restY + 1.2f, transform.position.z);
-            coin.SetActive(true);
-
-            StartCoroutine(LockBrick());
+            t += Time.fixedDeltaTime / bounceDuration;
+            float y = Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI) * bounceHeight;
+            rb.MovePosition(start + Vector2.up * y);
+            yield return new WaitForFixedUpdate();
         }
-    }
+        rb.position = start;
+        isBouncing = false;
 
-    // Let the brick finish its one bounce, then freeze it as an empty block
-    IEnumerator LockBrick()
-    {
-        yield return new WaitForSeconds(0.3f);
-
-        spring.enabled = false;
-        rb.linearVelocity = Vector2.zero;
-        rb.bodyType = RigidbodyType2D.Kinematic;
-        rb.position = new Vector2(rb.position.x, restY);
+        // only a spent coin brick freezes; plain bricks stay bumpable
+        if (hasCoin && isEmpty)
+            rb.bodyType = RigidbodyType2D.Static;
     }
 }

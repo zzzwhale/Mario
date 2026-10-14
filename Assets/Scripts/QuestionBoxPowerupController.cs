@@ -1,42 +1,23 @@
 using System.Collections;
 using UnityEngine;
-using static UnityEngine.LowLevelPhysics2D.PhysicsShape;
 
 public class QuestionBoxPowerupController : MonoBehaviour, IPowerupController
 {
-
     public Animator questionBoxAnimator;
     public Animator powerupAnimator;
     public BasePowerup powerup;
 
+    public float bounceHeight = 0.3f;
+    public float bounceDuration = 0.15f;
 
-   
-
-    private Rigidbody2D powerUpRb;
-    private float restY;
-    
-
-    private bool isUsed = false; // check if the question box has been hit
+    private Rigidbody2D rb;
+    private bool isUsed = false;
 
     void Start()
     {
-        powerUpRb = GetComponent<Rigidbody2D>();
+        rb = GetComponent<Rigidbody2D>();
         questionBoxAnimator = GetComponent<Animator>();
-        restY = powerUpRb.position.y;
-
-        powerupAnimator.gameObject.SetActive(false);   // hide the mushroom, like the coin
-    }
-
-    // the block can go up, but never below its resting height
-    void FixedUpdate()
-    {
-        if (isUsed) return;
-        if (powerUpRb.position.y < restY)
-        {
-            powerUpRb.position = new Vector2(powerUpRb.position.x, restY);
-            if (powerUpRb.linearVelocity.y < 0)
-                powerUpRb.linearVelocity = new Vector2(powerUpRb.linearVelocity.x, 0);
-        }
+        powerupAnimator.gameObject.SetActive(false);   // hide the mushroom
     }
 
     void OnCollisionEnter2D(Collision2D collision)
@@ -44,39 +25,44 @@ public class QuestionBoxPowerupController : MonoBehaviour, IPowerupController
         if (isUsed) return;
         if (!collision.gameObject.CompareTag("Player")) return;
 
-        if (Mathf.Abs(collision.contacts[0].normal.y) > 0.5f &&
-            collision.transform.position.y < transform.position.y)
-        {
-            isUsed = true;
+        // only count hits from below: Mario's head must be under the block's bottom edge
+        float marioTop = collision.collider.bounds.max.y;
+        float boxBottom = GetComponent<Collider2D>().bounds.min.y;
+        if (marioTop > boxBottom + 0.1f) return;
 
-            // stop Mario's upward motion so he doesn't stick to the block
-            Rigidbody2D marioRb = collision.gameObject.GetComponent<Rigidbody2D>();
-            if (marioRb != null)
-                marioRb.linearVelocity = new Vector2(marioRb.linearVelocity.x, 0);
+        isUsed = true;
 
-            questionBoxAnimator.SetBool("isHit", true);
-            powerupAnimator.gameObject.SetActive(true);
-            powerupAnimator.SetTrigger("spawned");
-            StartCoroutine(LockBlock());
-        }
+        // stop Mario going up so he doesn't stick to the block
+        Rigidbody2D marioRb = collision.gameObject.GetComponent<Rigidbody2D>();
+        if (marioRb != null)
+            marioRb.linearVelocity = new Vector2(marioRb.linearVelocity.x, 0);
+
+        questionBoxAnimator.SetBool("isHit", true);
+        powerupAnimator.gameObject.SetActive(true);
+        powerupAnimator.SetTrigger("spawned");
+
+        StartCoroutine(Bounce());
     }
 
-    // let the block finish one bounce, then freeze it
-    IEnumerator LockBlock()
+    // nudge up, come back down, then freeze
+    IEnumerator Bounce()
     {
-        yield return new WaitForSeconds(0.3f);
+        Vector2 start = rb.position;
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.fixedDeltaTime / bounceDuration;
+            float y = Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI) * bounceHeight;
+            rb.MovePosition(start + Vector2.up * y);
+            yield return new WaitForFixedUpdate();
+        }
+        rb.position = start;
         Disable();
     }
 
     public void Disable()
     {
-        SpringJoint2D spring = GetComponent<SpringJoint2D>();
-        if (spring != null) spring.enabled = false;
-
-        powerUpRb.linearVelocity = Vector2.zero;
-        powerUpRb.bodyType = RigidbodyType2D.Static;
-        transform.localPosition = new Vector3(0, 0, 0);
+        rb.linearVelocity = Vector2.zero;
+        rb.bodyType = RigidbodyType2D.Static;
     }
-
-
 }
