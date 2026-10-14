@@ -17,7 +17,7 @@ public class QuestionBoxPowerupController : MonoBehaviour, IPowerupController
     {
         rb = GetComponent<Rigidbody2D>();
         questionBoxAnimator = GetComponent<Animator>();
-        powerupAnimator.gameObject.SetActive(false);   // hide the mushroom
+        powerupAnimator.gameObject.SetActive(false);   // hide the powerup inside the block until it is spawned
     }
 
     void OnCollisionEnter2D(Collision2D collision)
